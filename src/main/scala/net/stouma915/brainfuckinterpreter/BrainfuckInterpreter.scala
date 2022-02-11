@@ -51,9 +51,24 @@ object BrainfuckInterpreter extends IOApp {
           Try(Files.readString(Paths.get(sourceFileName)))
             .map { source =>
               IO {
-                println(source)
+                val sourceWithoutReturns = source.replaceAll("\n", "")
 
-                ExitCode.Success
+                val result =
+                  Interpreter
+                    .evaluate(sourceWithoutReturns, Memory.Empty)
+                    .unsafeRunSync()
+
+                result match {
+                  case Right(output) =>
+                    println(output)
+
+                    ExitCode.Success
+                  case Left(err) =>
+                    println("Execution failed.")
+                    println(err)
+
+                    ExitCode.Error
+                }
               }
             }
             .recoverWith { case e: Exception =>
