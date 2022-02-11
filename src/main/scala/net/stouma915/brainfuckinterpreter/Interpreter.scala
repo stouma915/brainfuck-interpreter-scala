@@ -6,52 +6,80 @@ object Interpreter {
 
   import cats.effect.unsafe.implicits.global
 
-  def evaluate(sourceCode: String, memory: Memory): IO[Either[String, String]] =
-    IO {
-      var previousMemory = memory
-
-      val outputsOrErrors = sourceCode.toCharArray
-        .map { c =>
-          IO {
-            val result = eval(c, previousMemory).unsafeRunSync()
-
-            result match {
-              case Right(x) =>
-                previousMemory = x._2
-                Right(x._1)
-              case Left(err) =>
-                Left(err)
-            }
-          }
-        }
-        .map(_.unsafeRunSync())
-        .toList
-
-      if (outputsOrErrors.exists(_.isLeft))
-        Left(outputsOrErrors.filter(_.isLeft).head.left.getOrElse(""))
-      else
-        Right(outputsOrErrors.map(_.getOrElse("")).mkString(""))
-    }
-
-  private def eval(
-      character: Char,
+  def evaluate(
+      sourceCode: String,
       memory: Memory
   ): IO[Either[String, (String, Memory)]] =
     IO {
-      character match {
-        case '+' =>
-          Right("", memory.incrementValue)
-        case '-' =>
-          Right("", memory.decrementValue)
-        case '>' =>
-          Right("", memory.increment)
-        case '<' =>
-          Right("", memory.decrement)
-        case '.' =>
-          Right(ASCIIConverter.convert(memory.getCurrentValue).toString, memory)
-        case _ =>
-          Right("", memory)
+      var mem = memory
+      var output = ""
+      var error: Option[String] = None
+
+      var stop = false
+
+      sourceCode.zipWithIndex.foreach { case (char, index) =>
+        val program = IO {
+          char match {
+            case '+' =>
+              mem = mem.incrementValue
+            case '-' =>
+              mem = mem.decrementValue
+            case '>' =>
+              mem = mem.increment
+            case '<' =>
+              mem = mem.decrement
+            case '.' =>
+              output += ASCIIConverter.convert(mem.getCurrentValue).toString
+            case '[' =>
+              val codeBeforeBracket = sourceCode.substring(0, index)
+              val codeAfterBracket =
+                sourceCode.substring(index, sourceCode.length)
+
+              val loopEndIndex =
+                Util.searchLoopEnd(codeBeforeBracket, codeAfterBracket)
+              loopEndIndex match {
+                case Some(i) =>
+                  val loopCode = sourceCode.substring(index + 1, i - 1)
+                  val afterLoop = sourceCode.substring(i, sourceCode.length)
+
+                  while (mem.getCurrentValue != 0) {
+                    val result = evaluate(loopCode, mem).unsafeRunSync()
+                    result match {
+                      case Right(x) =>
+                        output += x._1
+                        mem = x._2
+                      case Left(err) =>
+                        error = Some(err)
+                    }
+                  }
+
+                  if (error.isEmpty) {
+                    val result = evaluate(afterLoop, mem).unsafeRunSync()
+                    result match {
+                      case Right(x) =>
+                        output += x._1
+                        mem = x._2
+                      case Left(err) =>
+                        error = Some(err)
+                    }
+                  }
+
+                  stop = true
+                case None =>
+                  error = Some("The end of the loop couldn't be identified.")
+              }
+            case _ =>
+          }
+        }
+
+        if (!stop)
+          program.unsafeRunSync()
       }
+
+      if (error.isEmpty)
+        Right(output, mem)
+      else
+        Left(error.get)
     }
 
 }

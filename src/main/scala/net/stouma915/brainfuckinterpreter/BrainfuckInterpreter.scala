@@ -59,8 +59,8 @@ object BrainfuckInterpreter extends IOApp {
                     .unsafeRunSync()
 
                 result match {
-                  case Right(output) =>
-                    println(output)
+                  case Right(x) =>
+                    println(x._1)
 
                     ExitCode.Success
                   case Left(err) =>
