@@ -1,8 +1,10 @@
 package net.stouma915.brainfuckinterpreter
 
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.{ExitCode, IO, IOApp, Resource}
 
+import scala.util.{Success, Try}
 import java.io.File
+import java.nio.file.{Files, Paths}
 
 object BrainfuckInterpreter extends IOApp {
 
@@ -46,7 +48,25 @@ object BrainfuckInterpreter extends IOApp {
               ExitCode.Error
           }
         } else {
-          ExitCode.Success
+          Try(Files.readString(Paths.get(sourceFileName)))
+            .map { source =>
+              IO {
+                println(source)
+
+                ExitCode.Success
+              }
+            }
+            .recoverWith { case e: Exception =>
+              Success {
+                IO {
+                  println(s"Unable to read source file: $e")
+
+                  ExitCode.Error
+                }
+              }
+            }
+            .get
+            .unsafeRunSync()
         }
       }
     }
