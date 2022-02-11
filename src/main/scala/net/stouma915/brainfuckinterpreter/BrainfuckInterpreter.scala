@@ -94,4 +94,5 @@ object BrainfuckInterpreter extends IOApp {
       BrainfuckInterpreter.getClass.getProtectionDomain.getCodeSource.getLocation.getPath
     ).getName
   }
+
 }
