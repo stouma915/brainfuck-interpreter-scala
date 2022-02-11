@@ -1,5 +1,77 @@
 package net.stouma915.brainfuckinterpreter
 
-import cats.effect.IO
+import cats.effect.{ExitCode, IO, IOApp}
 
-object BrainfuckInterpreter {}
+import java.io.File
+
+object BrainfuckInterpreter extends IOApp {
+
+  import cats.effect.unsafe.implicits.global
+
+  override def run(args: List[String]): IO[ExitCode] =
+    IO {
+      if (args.length != 1) {
+        showHelp().unsafeRunSync()
+
+        ExitCode.Error
+      } else {
+        val sourceFileName = args.head
+
+        if (sourceFileName.startsWith("-")) {
+          sourceFileName match {
+            case "--help" =>
+              showHelp().unsafeRunSync()
+
+              ExitCode.Success
+            case "-h" =>
+              showHelp().unsafeRunSync()
+
+              ExitCode.Success
+            case _ =>
+              val program = for {
+                _ <- IO {
+                  println(
+                    s"Found argument '$sourceFileName' which wasn't expected, or isn't valid in this context."
+                  )
+                  println("")
+                }
+                _ <- showUsage()
+                _ <- IO {
+                  println("")
+                  println("For more information try --help")
+                }
+              } yield ()
+              program.unsafeRunSync()
+
+              ExitCode.Error
+          }
+        } else {
+          ExitCode.Success
+        }
+      }
+    }
+
+  private def showHelp(): IO[Unit] = IO {
+    println("Brainf**k Interpreter 1.0.0")
+    println("")
+    showUsage().unsafeRunSync()
+    println("""
+        |Flags:
+        |    -h, --help    Prints help information.
+        |    
+        |Args:
+        |    <SOURCE> Brainfuck source file.
+        |""".stripMargin)
+  }
+
+  private def showUsage(): IO[Unit] = IO {
+    println("Usage:")
+    println(s"    ${getProgramName.unsafeRunSync()} [FLAGS] [SOURCE]")
+  }
+
+  private def getProgramName: IO[String] = IO {
+    new File(
+      BrainfuckInterpreter.getClass.getProtectionDomain.getCodeSource.getLocation.getPath
+    ).getName
+  }
+}
