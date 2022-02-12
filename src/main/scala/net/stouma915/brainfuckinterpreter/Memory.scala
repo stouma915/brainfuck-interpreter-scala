@@ -31,7 +31,7 @@ case class Memory(pointer: Int, entries: Map[Int, Int]) {
   def setValue(value: Int): Memory = {
     var mem = Memory(pointer, entries + (pointer -> 0))
 
-    (0 to math.abs(value)).foreach { _ =>
+    (1 to math.abs(value)).foreach { _ =>
       if (value < 0)
         mem = mem.decrementValue
       else

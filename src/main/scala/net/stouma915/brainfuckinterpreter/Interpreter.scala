@@ -2,6 +2,8 @@ package net.stouma915.brainfuckinterpreter
 
 import cats.effect.IO
 
+import java.util.Scanner
+
 object Interpreter {
 
   import cats.effect.unsafe.implicits.global
@@ -30,6 +32,29 @@ object Interpreter {
               mem = mem.decrement
             case '.' =>
               output += ASCIIConverter.convert(mem.getCurrentValue).toString
+            case ',' =>
+              val scanner = new Scanner(System.in)
+
+              var done = false
+              var input = 0
+
+              while (!done) {
+                print("Input was requested: ")
+
+                val line = scanner.nextLine()
+
+                line.toIntOption match {
+                  case Some(x) =>
+                    if (x >= -128 && x <= 127) {
+                      input = x
+                      done = true
+                    } else println("Please enter a 1 byte number.")
+                  case None =>
+                    println("Please enter a 1 byte number.")
+                }
+              }
+
+              mem = mem.setValue(input)
             case '[' =>
               val codeBeforeBracket = sourceCode.substring(0, index)
               val codeAfterBracket =
