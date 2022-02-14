@@ -9,11 +9,10 @@ object Interpreter {
   import cats.effect.unsafe.implicits.global
 
   def evaluate(
-      sourceCode: String,
-      memory: Memory
-  ): IO[Either[String, (String, Memory)]] =
+      sourceCode: String
+  )(implicit memory: Memory): IO[Either[String, (String, Memory)]] =
     IO {
-      var mem = memory
+      implicit var mem: Memory = memory
       var output = ""
       var error: Option[String] = None
 
@@ -68,7 +67,7 @@ object Interpreter {
                   val afterLoop = sourceCode.substring(i, sourceCode.length)
 
                   while (mem.getCurrentValue != 0) {
-                    val result = evaluate(loopCode, mem).unsafeRunSync()
+                    val result = evaluate(loopCode).unsafeRunSync()
                     result match {
                       case Right(x) =>
                         output += x._1
@@ -79,7 +78,7 @@ object Interpreter {
                   }
 
                   if (error.isEmpty) {
-                    val result = evaluate(afterLoop, mem).unsafeRunSync()
+                    val result = evaluate(afterLoop).unsafeRunSync()
                     result match {
                       case Right(x) =>
                         output += x._1

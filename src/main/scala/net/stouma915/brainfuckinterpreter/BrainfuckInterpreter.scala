@@ -53,9 +53,11 @@ object BrainfuckInterpreter extends IOApp {
               IO {
                 val sourceWithoutReturns = source.replaceAll("\n", "")
 
+                implicit val _memory: Memory = Memory.Empty
+
                 val result =
                   Interpreter
-                    .evaluate(sourceWithoutReturns, Memory.Empty)
+                    .evaluate(sourceWithoutReturns)
                     .unsafeRunSync()
 
                 result match {
