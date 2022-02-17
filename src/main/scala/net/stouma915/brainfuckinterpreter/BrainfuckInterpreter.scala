@@ -1,6 +1,7 @@
 package net.stouma915.brainfuckinterpreter
 
-import cats.effect.{ExitCode, IO, IOApp, Resource}
+import cats.effect.{ExitCode, IO}
+import net.stouma915.brainfuckinterpreter.Util
 
 import scala.util.{Success, Try}
 import java.io.File
@@ -29,15 +30,9 @@ object BrainfuckInterpreter {
   private[brainfuckinterpreter] def showUsage(): IO[Unit] =
     for {
       _ <- IO(println("Usage:"))
-      progName <- getProgramName
+      progName <- Util.getProgramName(BrainfuckInterpreter.getClass)
       _ <- IO(println(s"    $progName [FLAGS] [SOURCE]"))
     } yield ()
-
-  private[brainfuckinterpreter] def getProgramName: IO[String] = IO {
-    new File(
-      BrainfuckInterpreter.getClass.getProtectionDomain.getCodeSource.getLocation.getPath
-    ).getName
-  }
 
 }
 
