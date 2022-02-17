@@ -39,10 +39,6 @@ object BrainfuckInterpreter {
     ).getName
   }
 
-  private[brainfuckinterpreter] def exit(exitCode: ExitCode): IO[Unit] = IO {
-    sys.exit(exitCode.code)
-  }
-
 }
 
 @main
@@ -50,6 +46,8 @@ def interpreter(args: String*): Unit = {
 
   import cats.effect.unsafe.implicits.global
   import BrainfuckInterpreter.*
+
+  def exit(exitCode: ExitCode) = IO(sys.exit(exitCode.code))
 
   val program = IO {
     if (args.length != 1) {
